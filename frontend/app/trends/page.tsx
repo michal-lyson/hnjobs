@@ -181,12 +181,18 @@ function TrendsChart({ trends, months, hovered, selected, onHover, onSelect }: C
           );
         })}
 
-        {/* X axis labels */}
-        {months.map((m, i) => (
-          <text key={m} x={getX(i)} y={H - 8} textAnchor="middle" fontSize="10" fill="#71717a">
-            {m.replace(/(\w{3})\w* (\d{4})/, "$1 $2")}
-          </text>
-        ))}
+        {/* X axis labels — show at most 8 to avoid overlap */}
+        {(() => {
+          const step = Math.ceil(months.length / 8);
+          return months.map((m, i) => {
+            if (i % step !== 0 && i !== months.length - 1) return null;
+            return (
+              <text key={m} x={getX(i)} y={H - 8} textAnchor="middle" fontSize="10" fill="#71717a">
+                {m.replace(/(\w{3})\w* (\d{4})/, "$1 $2")}
+              </text>
+            );
+          });
+        })()}
       </svg>
     </div>
   );
