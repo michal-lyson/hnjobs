@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/lyson/hn-jobs/internal/models"
@@ -13,6 +14,10 @@ import (
 
 type Store struct {
 	db *sql.DB
+
+	trendsMu      sync.Mutex
+	trendsCache   *models.TrendsResponse
+	trendsCachedAt time.Time
 }
 
 func NewStore(db *sql.DB) *Store {
@@ -271,7 +276,26 @@ var kwRegexps = func() map[string]*regexp.Regexp {
 	return m
 }()
 
+const trendsTTL = time.Hour
+
 func (s *Store) GetTrends() (models.TrendsResponse, error) {
+	s.trendsMu.Lock()
+	defer s.trendsMu.Unlock()
+
+	if s.trendsCache != nil && time.Since(s.trendsCachedAt) < trendsTTL {
+		return *s.trendsCache, nil
+	}
+
+	result, err := s.computeTrends()
+	if err != nil {
+		return models.TrendsResponse{}, err
+	}
+	s.trendsCache = &result
+	s.trendsCachedAt = time.Now()
+	return result, nil
+}
+
+func (s *Store) computeTrends() (models.TrendsResponse, error) {
 	// Load all job texts with their thread month in one query
 	rows, err := s.db.Query(`
 		SELECT j.text, t.month
