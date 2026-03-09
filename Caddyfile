@@ -1,0 +1,7 @@
+{$DOMAIN} {
+    # API — proxied to Go backend
+    reverse_proxy /api/* backend:8080
+
+    # Everything else — proxied to Next.js frontend
+    reverse_proxy * frontend:3000
+}
