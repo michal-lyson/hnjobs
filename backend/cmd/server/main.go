@@ -25,12 +25,24 @@ func main() {
 	store := db.NewStore(database)
 	sc := scraper.New(store)
 
-	// Run scraper immediately on startup
-	go sc.Run()
+	// Warm trends cache from existing DB data before accepting requests
+	store.WarmCache()
+
+	// Run scraper immediately on startup; invalidate cache when done so fresh
+	// data is reflected on the next trends request
+	go func() {
+		sc.Run()
+		store.InvalidateTrendsCache()
+		store.WarmCache()
+	}()
 
 	// Schedule scraper to run daily at 9am
 	c := cron.New()
-	_, err = c.AddFunc("0 9 * * *", sc.Run)
+	_, err = c.AddFunc("0 9 * * *", func() {
+		sc.Run()
+		store.InvalidateTrendsCache()
+		store.WarmCache()
+	})
 	if err != nil {
 		log.Fatalf("cron: %v", err)
 	}

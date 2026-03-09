@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"regexp"
 	"sort"
 	"strings"
@@ -293,6 +294,31 @@ func (s *Store) GetTrends() (models.TrendsResponse, error) {
 	s.trendsCache = &result
 	s.trendsCachedAt = time.Now()
 	return result, nil
+}
+
+// WarmCache pre-computes trends in the background so the first HTTP request
+// is served from cache. Safe to call concurrently.
+func (s *Store) WarmCache() {
+	go func() {
+		result, err := s.computeTrends()
+		if err != nil {
+			log.Printf("trends warm cache: %v", err)
+			return
+		}
+		s.trendsMu.Lock()
+		s.trendsCache = &result
+		s.trendsCachedAt = time.Now()
+		s.trendsMu.Unlock()
+		log.Printf("trends cache warmed")
+	}()
+}
+
+// InvalidateTrendsCache drops the cached result so the next request recomputes.
+// Call this after the scraper finishes to reflect new data promptly.
+func (s *Store) InvalidateTrendsCache() {
+	s.trendsMu.Lock()
+	s.trendsCache = nil
+	s.trendsMu.Unlock()
 }
 
 func (s *Store) computeTrends() (models.TrendsResponse, error) {
