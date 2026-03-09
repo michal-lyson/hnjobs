@@ -99,7 +99,7 @@ Browser ──► Next.js (3000) ──► Go Chi API (8080) ──► SQLite
 ## Database Schema
 
 ```sql
-threads (id, hn_item_id UNIQUE, title, month, created_at)
+threads (id, hn_item_id UNIQUE, title, month, scraped_at, created_at)
 jobs    (id, hn_item_id UNIQUE, thread_id FK, author, text, company,
          location, remote_region, salary_min, salary_max, salary_curr, posted_at, url)
 jobs_fts  -- FTS5 virtual table over jobs(text, company, location)
@@ -124,7 +124,7 @@ FTS5 triggers auto-sync on INSERT/UPDATE/DELETE on jobs.
 - Go: errors returned as values, never panicked in handlers. Handlers write JSON directly.
 - SQL: always use `?` placeholders — never string-concatenate user input.
 - Dynamic query: `where := []string{"1=1"}` pattern in `ListJobs`.
-- FTS5 keyword search uses BM25 ranking (`ORDER BY bm25(jobs_fts)`). Without keywords, results sort by `posted_at DESC`.
+- Results always sort by `posted_at DESC`. FTS5 is used for filtering only, not ranking.
 - React: all interactive components have `"use client"` directive at top.
 - Tailwind: dark theme using zinc palette (`zinc-900` bg, `zinc-100` text, `orange-500` accents).
 - Env vars: `NEXT_PUBLIC_` prefix required for browser-visible vars in Next.js.
@@ -136,6 +136,7 @@ FTS5 triggers auto-sync on INSERT/UPDATE/DELETE on jobs.
 - npm cache may have root-owned files. Use `--cache /tmp/npm-cache` as workaround.
 - SQLite `SetMaxOpenConns(1)` is intentional — prevents write lock errors.
 - The scraper fetches 36 threads (~3 years). Full scrape takes 15–30 min due to `time.Sleep` between requests to be polite to HN APIs.
+- Threads older than 45 days with `scraped_at` set are skipped on subsequent runs. Recent threads are always re-scraped to pick up new comments.
 - Salary and remote region extraction are regex-based and best-effort.
 - "Go" keyword in trends uses a case-sensitive pattern (`\bGo\b|\bgolang\b`) to avoid matching the verb "go".
 - Algolia API URL params must be URL-encoded (use `url.Values`, not raw string interpolation).

@@ -144,9 +144,10 @@ Returns the 20 most mentioned technology keywords across all scraped threads, wi
 On startup (and daily at 9am), the scraper:
 
 1. Queries the Algolia HN API to find the 36 most recent "Who is Hiring?" threads (~3 years)
-2. Fetches each thread's top-level comments via the HN Firebase API
-3. Parses each comment with regex to extract company, location, remote region, and salary (multi-currency)
-4. Upserts into SQLite (safe to run multiple times — no duplicates)
+2. Skips threads older than 45 days that were already fully scraped — only re-scrapes recent threads
+3. Fetches each thread's top-level comments via the HN Firebase API
+4. Parses each comment with regex to extract company, location, remote region, and salary (multi-currency)
+5. Upserts into SQLite (safe to run multiple times — no duplicates)
 
 Salary extraction supports: USD, EUR, GBP, JPY, CHF, CAD, AUD, SGD, INR, SEK, DKK, NOK, PLN, CZK.
 
