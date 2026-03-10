@@ -16,9 +16,8 @@ import (
 type Store struct {
 	db *sql.DB
 
-	trendsMu      sync.Mutex
-	trendsCache   *models.TrendsResponse
-	trendsCachedAt time.Time
+	trendsMu    sync.Mutex
+	trendsCache *models.TrendsResponse
 }
 
 func NewStore(db *sql.DB) *Store {
@@ -277,13 +276,11 @@ var kwRegexps = func() map[string]*regexp.Regexp {
 	return m
 }()
 
-const trendsTTL = time.Hour
-
 func (s *Store) GetTrends() (models.TrendsResponse, error) {
 	s.trendsMu.Lock()
 	defer s.trendsMu.Unlock()
 
-	if s.trendsCache != nil && time.Since(s.trendsCachedAt) < trendsTTL {
+	if s.trendsCache != nil {
 		return *s.trendsCache, nil
 	}
 
@@ -292,7 +289,6 @@ func (s *Store) GetTrends() (models.TrendsResponse, error) {
 		return models.TrendsResponse{}, err
 	}
 	s.trendsCache = &result
-	s.trendsCachedAt = time.Now()
 	return result, nil
 }
 
@@ -307,7 +303,6 @@ func (s *Store) WarmCache() {
 		}
 		s.trendsMu.Lock()
 		s.trendsCache = &result
-		s.trendsCachedAt = time.Now()
 		s.trendsMu.Unlock()
 		log.Printf("trends cache warmed")
 	}()
