@@ -38,7 +38,7 @@ func main() {
 
 	// Schedule scraper to run daily at 9am
 	c := cron.New()
-	_, err = c.AddFunc("0 9 * * *", func() {
+	_, err = c.AddFunc("0 */3 * * *", func() {
 		sc.Run()
 		store.InvalidateTrendsCache()
 		store.WarmCache()
