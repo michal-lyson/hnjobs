@@ -117,7 +117,7 @@ FTS5 triggers auto-sync on INSERT/UPDATE/DELETE on jobs.
 | `GET /api/trends` | Top 20 tech keywords with monthly counts |
 | `GET /api/health` | Health check |
 
-`GET /api/jobs` params: `keywords` (space/comma separated, BM25 ranked), `location`, `remote_region` (any/us/eu/global), `salary_min`, `date_from` (YYYY-MM-DD), `page`, `page_size`
+`GET /api/jobs` params: `keywords` (space/comma separated, FTS5 filtered, results sorted by date), `location`, `remote_region` (any/us/eu/global), `salary_min`, `date_from` (YYYY-MM-DD), `page`, `page_size`
 
 ## Conventions
 

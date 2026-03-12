@@ -55,7 +55,7 @@ export default function AboutPage() {
               , parses each job post, and indexes it into SQLite with full-text search.
             </p>
             <ul className="mt-3 flex flex-col gap-2 list-disc list-inside text-zinc-400">
-              <li>Search by multiple keywords — ranked by relevance using FTS5 BM25</li>
+              <li>Search by multiple keywords — full-text search using SQLite FTS5</li>
               <li>Filter by remote region — Global, EU, or US</li>
               <li>Filter by salary range (multi-currency)</li>
               <li>Filter by location and date</li>

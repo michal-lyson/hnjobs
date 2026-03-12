@@ -80,7 +80,7 @@ var ftsUnsafe = regexp.MustCompile(`[^a-zA-Z0-9_.#+]`)
 var ftsReserved = map[string]bool{"AND": true, "OR": true, "NOT": true}
 
 // buildFTSQuery tokenizes a keyword string (comma/space/semicolon separated)
-// into an FTS5 OR query so that posts matching more terms rank higher via bm25.
+// into an FTS5 OR query used to filter matching posts.
 func buildFTSQuery(keywords string) string {
 	tokens := strings.FieldsFunc(keywords, func(r rune) bool {
 		return r == ',' || r == ';' || r == ' ' || r == '\t'
@@ -149,7 +149,7 @@ func (s *Store) ListJobs(f models.JobFilter) (models.JobsResponse, error) {
 	)
 
 	if useKeywords {
-		// FTS JOIN so bm25() is available; MATCH arg goes first
+		// FTS JOIN for keyword filtering; MATCH arg goes first
 		countArgs = append([]any{ftsQuery}, args...)
 		countSQL = fmt.Sprintf(`
 			SELECT COUNT(*) FROM jobs_fts

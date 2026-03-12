@@ -76,7 +76,7 @@ Returns paginated job listings with optional filters.
 
 | Parameter | Type | Example | Description |
 |---|---|---|---|
-| `keywords` | string | `react typescript` | Full-text search, comma/space separated, ranked by BM25 |
+| `keywords` | string | `react typescript` | Full-text search, comma/space separated, results sorted by date |
 | `location` | string | `Berlin` | Location substring match |
 | `remote_region` | string | `eu` | `any`, `us`, `eu`, or `global` |
 | `salary_min` | int | `100000` | Minimum salary (currency-agnostic) |
