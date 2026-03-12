@@ -64,8 +64,13 @@ func (s *Scraper) Run() {
 	log.Printf("scraper: found %d hiring threads", len(threadIDs))
 
 	for _, threadID := range threadIDs {
-		if err := s.scrapeThread(threadID); err != nil {
+		done, err := s.scrapeThread(threadID)
+		if err != nil {
 			log.Printf("scraper: thread %d error: %v", threadID, err)
+		}
+		if done {
+			log.Println("scraper: reached old scraped thread — stopping early")
+			break
 		}
 		time.Sleep(500 * time.Millisecond)
 	}
@@ -105,22 +110,24 @@ func (s *Scraper) findHiringThreads() ([]int, error) {
 // (no new comments expected) and skip re-scraping if already done.
 const scrapeThreshold = 45 * 24 * time.Hour
 
-func (s *Scraper) scrapeThread(threadID int) error {
+// scrapeThread processes one thread. Returns (true, nil) when the thread is
+// old enough to be considered frozen — the caller should stop iterating.
+func (s *Scraper) scrapeThread(threadID int) (done bool, err error) {
 	item, err := s.fetchItem(threadID)
 	if err != nil {
-		return fmt.Errorf("fetch thread: %w", err)
+		return false, fmt.Errorf("fetch thread: %w", err)
 	}
 
 	month := extractMonth(item.Title)
 	threadDBID, alreadyScraped, err := s.store.UpsertThread(item.ID, item.Title, month)
 	if err != nil {
-		return fmt.Errorf("upsert thread: %w", err)
+		return false, fmt.Errorf("upsert thread: %w", err)
 	}
 
 	threadAge := time.Since(time.Unix(item.Time, 0))
 	if alreadyScraped && threadAge > scrapeThreshold {
 		log.Printf("scraper: skipping thread %d (%s) — already scraped and >45 days old", threadID, item.Title)
-		return nil
+		return true, nil
 	}
 
 	log.Printf("scraper: processing thread %d (%s) with %d comments", threadID, item.Title, len(item.Kids))
@@ -148,7 +155,7 @@ func (s *Scraper) scrapeThread(threadID int) error {
 		log.Printf("scraper: mark thread %d scraped: %v", threadID, err)
 	}
 
-	return nil
+	return false, nil
 }
 
 func (s *Scraper) fetchItem(id int) (*hnItem, error) {
